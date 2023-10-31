@@ -1,0 +1,6 @@
+torchvision
+numpy
+matplotlib
+easydict
+scikit-image
+imageio
