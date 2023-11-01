@@ -1,6 +1,6 @@
 # MonoDepth
 
-本实验设计基于[MonoDepth-PyTorch](https://github.com/OniroAI/MonoDepth-PyTorch/)改进，将论文中给出的网络MonoDepth复现，并与resnet18,resnet50网络结构融合设计，以便于训练的轻量简化。
+本实验设计基于[MonoDepth-PyTorch](https://github.com/OniroAI/MonoDepth-PyTorch/)，整理MonoDepth与resnet18, resnet50, Unet网络结构融合，便于训练的轻量简化。
 
 论文Unsupervised Monocular Depth Estimation with Left-Right Consistency的相关文件如下：
 
