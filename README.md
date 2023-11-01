@@ -1,44 +1,46 @@
 # MonoDepth
-![demo.gif animation](readme_images/demo.gif)
 
-This repo is inspired by an amazing work of [Clément Godard](http://www0.cs.ucl.ac.uk/staff/C.Godard/), [Oisin Mac Aodha](http://vision.caltech.edu/~macaodha/) and [Gabriel J. Brostow](http://www0.cs.ucl.ac.uk/staff/g.brostow/) for Unsupervised Monocular Depth Estimation.
-Original code and paper could be found via the following links:
+本实验设计基于[MonoDepth-PyTorch](https://github.com/OniroAI/MonoDepth-PyTorch/)改进，将论文中给出的网络MonoDepth复现，并与resnet18,resnet50网络结构融合设计，以便于训练的轻量简化。
+
+论文Unsupervised Monocular Depth Estimation with Left-Right Consistency的相关文件如下：
+
 1. [Original repo](https://github.com/mrharicot/monodepth)
 2. [Original paper](https://arxiv.org/abs/1609.03677)
 
-## MonoDepth-PyTorch
-This repository contains code and additional parts for the PyTorch port of the MonoDepth Deep Learning algorithm. For more information about original work, please visit [author's website](http://visual.cs.ucl.ac.uk/pubs/monoDepth/)
+### 实验环境
 
-## Purpose
+本实验基于Python 3.6.9, Ubuntu 18.04 LTS, torch1.12.1环境测试，在阿里云<8核(vCPU) 31 GiB + NVIDIA T4>平台训练。
 
-Purpose of this repository is to make a more lightweight model for depth estimation with better accuracy.
-In our version of MonoDepth, we used ResNet50 as an encoder. It was slightly changed (with one more lateral shrinkage) as well as in the original repo.
+### 预装库
 
-Also, we add ResNet18 version and used batch normalization in both cases for training stability.
-Moreover, we made flexible feature extractor with any version of original Resnet from torchvision models zoo
- with an option to use pretrained models.
+本实验使用了python3和virtualenv，可使用下述命令安装requirements.txt中指定的依赖：
 
-## Dataset
+```shell
+virtualenv -p python3 .env
+source .env/bin/activate
+pip install -r requirements.txt
+```
+
+退出虚拟环境可使用`deactivate`。
+
 ### KITTI
 
-This algorithm requires stereo-pair images for training and single images for testing.
-[KITTI](http://www.cvlibs.net/datasets/kitti/raw_data.php) dataset was used for training.
-It contains 38237 training samples.
-Raw dataset (about 175 GB) can be downloaded by running:
+本实验使用[KITTI](https://www.cvlibs.net/datasets/kitti/)数据集，主要使用其`/raw_data`文件夹中的`/image_02`与`/image_03`，前者为左视图，后者为右视图。
+数据集可以使用下列命令获得。
+
 ```shell
 wget -i kitti_archives_to_download.txt -P ~/my/output/folder/
 ```
-kitti_archives_to_download.txt may be found in this repo.
 
-## Dataloader
-Dataloader assumes the following structure of the folder with train examples (**'data_dir'** argument contains path to that folder):
-The folder contains subfolders with following folders "image_02/data" for left images and  "image_03/data" for right images.
-Such structure is default for KITTI dataset
+[kitti_archives_to_download.txt](https://github.com/Wr0ne/monodepth_pytorch/blob/main/kitti_archives_to_download.txt)可在仓库内找到。
 
-Example data folder structure (path to the "kitti" directory should be passed as **'data_dir'** in this example):
-```
+### Dataloader
+
+Dataloader脚本假定了如示例的文件结构，`/data`文件夹包含了训练集`/train`，模型文件夹`/models`，验证集`/vals`，测试集`/test`...
+
+```shell
 data
-├── kitti
+├── train
 │   ├── 2011_09_26_drive_0001_sync
 │   │   ├── image_02
 │   │   │   ├─ data
@@ -50,95 +52,95 @@ data
 │   │   │   │   └── ...
 │   ├── ...
 ├── models
+├── vals
 ├── output
 ├── test
-│   ├── left
-│   │   ├── test_1.jpg
+│   ├── 2011_09_26_drive_0002_sync
+│   │   ├── image_02
 │   │   └── ...
-```
-    
-## Training
-Example of training can be find in [Monodepth](Monodepth.ipynb) notebook.
-
-Model class from main_monodepth_pytorch.py should be initialized with following params (as easydict) for training:
- - `data_dir`: path to the dataset folder
- - `val_data_dir`: path to the validation dataset folder
- - `model_path`: path to save the trained model
- - `output_directory`: where save dispairities for tested images
- - `input_height`
- - `input_width`
- - `model`: model for encoder (resnet18_md or resnet50_md or any torchvision version of Resnet (resnet18, resnet34 etc.)
- - `pretrained`: if use a torchvision model it's possible to download weights for pretrained model
- - `mode`: train or test
- - `epochs`: number of epochs,
- - `learning_rate`
- - `batch_size`
- - `adjust_lr`: apply learning rate decay or not
- - `tensor_type`:'torch.cuda.FloatTensor' or 'torch.FloatTensor'
- - `do_augmentation`:do data augmentation or not
- - `augment_parameters`:lowest and highest values for gamma, lightness and color respectively
- - `print_images`
- - `print_weights`
- - `input_channels` Number of channels in input tensor (3 for RGB images)
- - `num_workers` Number of workers to use in dataloader
-
-Optionally after initialization, we can load a pretrained model via `model.load`.
-
-After that calling train() on Model class object starts the training process.
-
-Also, it can be started via calling main_monodepth_pytorch.py through the terminal and feeding parameters as argparse arguments.
-
-## Train results and pretrained model
-
-Results presented on the gif image were obtained using the model with a **resnet18** as an encoder, which can be downloaded from [here](https://my.pcloud.com/publink/show?code=XZb5r97ZD7HDDlc237BMjoCbWJVYMm0FLKcy).
-
-For training the following parameters were used:
-```
-`model`: 'resnet18_md'
-`epochs`: 200,
-`learning_rate`: 1e-4,
-`batch_size`: 8,
-`adjust_lr`: True,
-`do_augmentation`: True
-```
-The provided model was trained on the whole dataset, except subsets, listed below, which were used for a hold-out validation.
-
-```
-2011_09_26_drive_0002_sync  2011_09_29_drive_0071_sync
-2011_09_26_drive_0014_sync  2011_09_30_drive_0033_sync
-2011_09_26_drive_0020_sync  2011_10_03_drive_0042_sync
-2011_09_26_drive_0079_sync
+│   ├── ...
 ```
 
-The demo gif image is a visualization of the predictions on `2011_09_26_drive_0014_sync` subset.
+### 模型训练以及检测
 
-See [Monodepth](Monodepth.ipynb) notebook for the details on the training.
-    
-## Testing
-Example of testing can also be find in [Monodepth](Monodepth.ipynb) notebook.
+在示例文件`Monodepth.ipynb`中给出了训练模型，测试模型以及整理结果的代码。
 
-Model class from main_monodepth_pytorch.py should be initialized with following params (as easydict) for testing:
- - `data_dir`: path to the dataset folder
- - `model_path`: path to save the trained model
- - `pretrained`: 
- - `output_directory`: where save dispairities for tested images
- - `input_height`
- - `input_width`
- - `model`: model for encoder (resnet18 or resnet50)
- - `mode`: train or test
- - `input_channels` Number of channels in input tensor (3 for RGB images)
- - `num_workers` Number of workers to use in dataloader
- 
-After that calling test() on Model class object starts testing process.
+本实验使用了KITTI数据集中的部分文件(~41.22G)进行训练模型与测试，如下：
 
-Also it can be started via calling [main_monodepth_pytorch.py](main_monodepth_pytorch.py) through the terminal and feeding parameters as argparse arguments. 
-    
-## Requirements
-This code was tested with PyTorch 0.4.1, CUDA 9.1 and Ubuntu 16.04. Other required modules:
-
+```shell
+2011_09_26_drive_0002_sync  0.30G
+2011_09_26_drive_0014_sync  1.17G
+2011_09_26_drive_0020_sync  0.35G
+2011_09_26_drive_0035_sync  0.48G
+2011_09_26_drive_0056_sync  1.13G
+2011_09_26_drive_0079_sync  0.41G
+2011_09_26_drive_0084_sync  1.47G
+2011_09_26_drive_0101_sync  3.37G
+2011_09_26_drive_0117_sync  2.59G
+2011_09_29_drive_0071_sync  4.03G
+2011_09_30_drive_0020_sync  4.47G
+2011_09_30_drive_0033_sync  6.56G
+2011_10_03_drive_0027_sync  14.89G
 ```
-torchvision
-numpy
-matplotlib
-easydict
-```
+
+在训练结束后，在`2011_09_26_drive_0014_sync`数据上绘制gif结果。
+
+## 摘要
+
+基于深度学习的方法在单图像深度估计任务中展示出了优异的表现。但一般而言，大多模型都是基于语义来估计深度，或者根据显式深度数据来训练模型，本实验复现了一种用更容易获得的双目立体镜头数据学习单图像估计深度的模型--MonoDepth，该模型应用了较为特别的损失函数，以保证左右图像产生视差的一致性。MonoDepth用一边视图去产生另一边的视图，最终根据实际单目数据与模型推理得到数据的视差对深度进行估计。
+
+## 实验说明
+
+### 代码文件
+
+#### utils.py
+
+此脚本中主要是数据的准备工作，其中包含三个函数：
+
++ to_device() 将数据放进GPU
++ get_model() 创建模型
++ prepare_dataloader() 准备数据集的训练，调用transforms() 对图像进行变换
+
+#### transforms.py
+
+用于图片的数据增强，包含类ResizeImage，类ToTensor，类AugmentImagePair。
+
++ 类ResizeImage 将图片resize为合适的大小
++ 类ToTensor 将图片转换为Tensor格式存储
++ 类AugmentImagePair 随机伽马变换，随机亮度变换，随机色彩变换
+
+#### loss.py
+
+定义了模型损失函数的对应代码，包含三部分：重建损失，平滑损失，一致性损失。
+
+对应论文中公式：
+
+$$
+C_s = \alpha_{ap} (C_{ap}^{l} + C_{ap}^{r}) + \alpha_{ds} (C_{ds}^{l} + C_{ds}^{r}) + \alpha_{lr} (C_{lr}^{l} + C_{lr}^{r})
+$$
+
+#### models_resnet.py
+
+定义了三个网络模型：resnet18，resnet50，Unet。
+
+### 实验流程
+
+![Depth_Estimation_Network](src/Depth_Estimation_Network.png)
+
+#### Unet网络结构
+
+![Model_architecture](src/Model_architecture.png)
+
+本实验主要根据Unet模型，训练了50个epoch，最终结果train_loss = 0.79，val_loss = 0.99，训练得到的模型文件可在实验结果部分获得
+
+## 主要实验结果
+
+![raw](src/raw.gif)
+![pred](src/pred.gif)
+
+训练得到的Unet模型可在以下链接得到
+[https://pan.baidu.com/s/1qGl_oCtHaeMkfk2y5u0Q4g?pwd=1dzf 提取码：1dzf](https://pan.baidu.com/s/1qGl_oCtHaeMkfk2y5u0Q4g?pwd=1dzf)
+
+## 参考文献
+
+[Unsupervised Monocular Depth Estimation with Left-Right Consistency](src/MonoDepth_paper.pdf)
