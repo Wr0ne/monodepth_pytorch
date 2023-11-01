@@ -4,3 +4,4 @@ matplotlib
 easydict
 scikit-image
 imageio
+jupyter notebook
